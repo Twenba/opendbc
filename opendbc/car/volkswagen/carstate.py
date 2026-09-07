@@ -294,7 +294,8 @@ class CarState(CarStateBase, MadsCarState):
     drive_mode = ret.gearShifter == GearShifter.drive
     
     hca_status = self.CCP.hca_status_values.get(pt_cp.vl["QFK_01"]["LatCon_HCA_Status"])
-    hca_status_fluctuation = self.update_hca_status_watchdog(hca_status) if not (self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT) else False
+    blinker_stalk = bool(pt_cp.vl["SMLS_01"]["BH_Blinker_li"]) or bool(pt_cp.vl["SMLS_01"]["BH_Blinker_re"])
+    hca_status_fluctuation = self.update_hca_status_watchdog(hca_status, blinker_stalk) if not (self.CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT) else False
     ret.steerFaultTemporary, ret.steerFaultPermanent, ret_ic.steerFaultWarning = self.update_hca_state(
       hca_status, drive_mode=drive_mode, hca_watchdog_fail=hca_status_fluctuation
     )
@@ -541,10 +542,15 @@ class CarState(CarStateBase, MadsCarState):
     ret.steerFaultTemporary, ret.steerFaultPermanent, ret_ic.steerFaultWarning = self.update_hca_state(hca_status, drive_mode)
     return
     
-  def update_hca_status_watchdog(self, hca_status):
+  def update_hca_status_watchdog(self, hca_status, blinker_stalk=False):
     # On MY2025+ vehicles the steering command path moves to Automotive Ethernet, where it cannot be intercepted here.
     # Detect the resulting fluctuating HCA status so a user-facing warning can be raised.
     current_frame = self.frame
+    if blinker_stalk:
+      self.hca_status_fluctuation_frames.clear()
+      self.hca_status_last = hca_status
+      self.hca_status_fluct_counter = 0
+      return False
     if self.hca_status_last is not None and hca_status is not None and hca_status != self.hca_status_last:
       self.hca_status_fluctuation_frames.append(current_frame)
     self.hca_status_last = hca_status

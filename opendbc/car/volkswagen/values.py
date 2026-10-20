@@ -608,7 +608,7 @@ class CAR(Platforms):
   )
   AUDI_A3_MK4 = VolkswagenMQBevoPlatformConfig(
     [VWCarDocs("Audi RS3 2026")],
-    VolkswagenCarSpecs(mass=1650, wheelbase=2.631),
+    VolkswagenCarSpecs(mass=1708, wheelbase=2.791),
     chassis_codes={"GY"},
     wmis={WMI.AUDI_EUROPE_MPV},
     #model_years={"T"},
